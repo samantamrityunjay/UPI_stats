@@ -5,9 +5,10 @@ import matplotlib.dates as mdates
 import calendar
 from datetime import datetime
 
-from upi_volume import upi_product
+from upi_product import upi_product
 from upi_ecosystem import upi_ecosystem
-url = "https://www.npci.org.in/what-we-do/upi/product-statistics"
+
+url_product = "https://www.npci.org.in/what-we-do/upi/product-statistics"
 url_ecosystem = "https://www.npci.org.in/what-we-do/upi/upi-ecosystem-statistics"
 
 
@@ -15,67 +16,67 @@ st.title("UPI statistics")
 
 @st.cache
 def get_data(url_product,url_ecosystem):
-    data_upi_product = upi_product(url)
-    data_df = data_upi_product.data()
+    data_upi_product = upi_product(url_product).data()
     
-    upi_apps = upi_ecosystem(url_ecosystem)
-    whole_stat = upi_apps.months_data()
+    monthly_ecosystem_stat = upi_ecosystem(url_ecosystem).months_data()
     
-    return data_df,whole_stat
+    return data_upi_product, monthly_ecosystem_stat
 
-data_df,whole_stat = get_data(url, url_ecosystem)
+data_upi_product, monthly_ecosystem_stat = get_data(url_product, url_ecosystem)
+
+
 
 @st.cache
-def get_upi_app_data(whole_stat):
-    months = [datetime.strptime(x, '%b %Y') for x in whole_stat.keys() if "upi_app_stat" in whole_stat[x].keys()]
+def get_upi_app_data(monthly_ecosystem_stat):
+    months = [datetime.strptime(x, '%b %Y') for x in monthly_ecosystem_stat.keys() if "upi_app_stat" in monthly_ecosystem_stat[x].keys()]
     
-    all_upi_apps = list(set([app for x in whole_stat.keys() if "upi_app_stat" in whole_stat[x].keys() for app in whole_stat[x]["upi_app_stat"]["AppName"]]))
+    all_upi_apps = list(set([app for x in monthly_ecosystem_stat.keys() if "upi_app_stat" in monthly_ecosystem_stat[x].keys() for app in monthly_ecosystem_stat[x]["upi_app_stat"]["AppName"]]))
     
     upi_app_monthly_value = {}
     upi_app_monthly_volume = {}
     for app in all_upi_apps:
-        upi_app_monthly_value[app] = [whole_stat[key]["upi_app_stat"]["TotalValue"][whole_stat[key]["upi_app_stat"]["AppName"].index(app)] if app in whole_stat[key]["upi_app_stat"]["AppName"] else 0 for key in whole_stat.keys() if "upi_app_stat" in whole_stat[key].keys()]
+        upi_app_monthly_value[app] = [monthly_ecosystem_stat[key]["upi_app_stat"]["TotalValue"][monthly_ecosystem_stat[key]["upi_app_stat"]["AppName"].index(app)] if app in monthly_ecosystem_stat[key]["upi_app_stat"]["AppName"] else 0 for key in monthly_ecosystem_stat.keys() if "upi_app_stat" in monthly_ecosystem_stat[key].keys()]
         
-        upi_app_monthly_volume[app] = [whole_stat[key]["upi_app_stat"]["TotalVolume"][whole_stat[key]["upi_app_stat"]["AppName"].index(app)] if app in whole_stat[key]["upi_app_stat"]["AppName"] else 0 for key in whole_stat.keys() if "upi_app_stat" in whole_stat[key].keys()]
+        upi_app_monthly_volume[app] = [monthly_ecosystem_stat[key]["upi_app_stat"]["TotalVolume"][monthly_ecosystem_stat[key]["upi_app_stat"]["AppName"].index(app)] if app in monthly_ecosystem_stat[key]["upi_app_stat"]["AppName"] else 0 for key in monthly_ecosystem_stat.keys() if "upi_app_stat" in monthly_ecosystem_stat[key].keys()]
         
     return months, all_upi_apps, upi_app_monthly_value, upi_app_monthly_volume
 
-upi_months, all_upi_apps, upi_app_monthly_value, upi_app_monthly_volume = get_upi_app_data(whole_stat)
+upi_months, all_upi_apps, upi_app_monthly_value, upi_app_monthly_volume = get_upi_app_data(monthly_ecosystem_stat)
 
 @st.cache
-def get_remit_bank_data(whole_stat):
-    months = [datetime.strptime(x, '%b %Y') for x in whole_stat.keys()]
+def get_remit_bank_data(monthly_ecosystem_stat):
+    months = [datetime.strptime(x, '%b %Y') for x in monthly_ecosystem_stat.keys()]
     
-    all_remit_banks = list(set([bank for month in whole_stat.keys() for bank in whole_stat[month]['remitter_bank']["BankName"]]))
+    all_remit_banks = list(set([bank for month in monthly_ecosystem_stat.keys() for bank in monthly_ecosystem_stat[month]['remitter_bank']["BankName"]]))
     
     remit_bank_monthly_volume = {}
     remit_bank_monthly_failure = {}
     for bank in all_remit_banks:
-        remit_bank_monthly_volume[bank] = [whole_stat[key]["remitter_bank"]["TotalVolume"][whole_stat[key]["remitter_bank"]["BankName"].index(bank)] if bank in whole_stat[key]["remitter_bank"]["BankName"] else 0 for key in whole_stat.keys()]
+        remit_bank_monthly_volume[bank] = [monthly_ecosystem_stat[key]["remitter_bank"]["TotalVolume"][monthly_ecosystem_stat[key]["remitter_bank"]["BankName"].index(bank)] if bank in monthly_ecosystem_stat[key]["remitter_bank"]["BankName"] else 0 for key in monthly_ecosystem_stat.keys()]
         
-        remit_bank_monthly_failure[bank] = [100 - whole_stat[key]["remitter_bank"]["Approved"][whole_stat[key]["remitter_bank"]["BankName"].index(bank)] if bank in whole_stat[key]["remitter_bank"]["BankName"] else 0 for key in whole_stat.keys()]
+        remit_bank_monthly_failure[bank] = [100 - monthly_ecosystem_stat[key]["remitter_bank"]["Approved"][monthly_ecosystem_stat[key]["remitter_bank"]["BankName"].index(bank)] if bank in monthly_ecosystem_stat[key]["remitter_bank"]["BankName"] else 0 for key in monthly_ecosystem_stat.keys()]
         
     return months, all_remit_banks, remit_bank_monthly_volume, remit_bank_monthly_failure
 
-remit_months, all_remit_banks, remit_bank_monthly_volume, remit_bank_monthly_failure = get_remit_bank_data(whole_stat)
+remit_months, all_remit_banks, remit_bank_monthly_volume, remit_bank_monthly_failure = get_remit_bank_data(monthly_ecosystem_stat)
 
 
 @st.cache
-def get_benefit_bank_data(whole_stat):
-    months = [datetime.strptime(x, '%b %Y') for x in whole_stat.keys()]
+def get_benefit_bank_data(monthly_ecosystem_stat):
+    months = [datetime.strptime(x, '%b %Y') for x in monthly_ecosystem_stat.keys()]
     
-    all_benefit_banks = list(set([bank for month in whole_stat.keys() for bank in whole_stat[month]['beneficiary_bank']["BankName"]]))
+    all_benefit_banks = list(set([bank for month in monthly_ecosystem_stat.keys() for bank in monthly_ecosystem_stat[month]['beneficiary_bank']["BankName"]]))
     
     benefit_bank_monthly_volume = {}
     benefit_bank_monthly_failure = {}
     for bank in all_benefit_banks:
-        benefit_bank_monthly_volume[bank] = [whole_stat[key]["beneficiary_bank"]["TotalVolume"][whole_stat[key]["beneficiary_bank"]["BankName"].index(bank)] if bank in whole_stat[key]["beneficiary_bank"]["BankName"] else 0 for key in whole_stat.keys()]
+        benefit_bank_monthly_volume[bank] = [monthly_ecosystem_stat[key]["beneficiary_bank"]["TotalVolume"][monthly_ecosystem_stat[key]["beneficiary_bank"]["BankName"].index(bank)] if bank in monthly_ecosystem_stat[key]["beneficiary_bank"]["BankName"] else 0 for key in monthly_ecosystem_stat.keys()]
         
-        benefit_bank_monthly_failure[bank] = [100 - whole_stat[key]["beneficiary_bank"]["Approved"][whole_stat[key]["beneficiary_bank"]["BankName"].index(bank)] if bank in whole_stat[key]["beneficiary_bank"]["BankName"] else 0 for key in whole_stat.keys()]
+        benefit_bank_monthly_failure[bank] = [100 - monthly_ecosystem_stat[key]["beneficiary_bank"]["Approved"][monthly_ecosystem_stat[key]["beneficiary_bank"]["BankName"].index(bank)] if bank in monthly_ecosystem_stat[key]["beneficiary_bank"]["BankName"] else 0 for key in monthly_ecosystem_stat.keys()]
         
     return months, all_benefit_banks, benefit_bank_monthly_volume, benefit_bank_monthly_failure
 
-benefit_months, all_benefit_banks, benefit_bank_monthly_volume, benefit_bank_monthly_failure = get_benefit_bank_data(whole_stat)   
+benefit_months, all_benefit_banks, benefit_bank_monthly_volume, benefit_bank_monthly_failure = get_benefit_bank_data(monthly_ecosystem_stat)   
        
     
 
@@ -83,9 +84,10 @@ type_statistic = st.sidebar.selectbox("Type of statistics",("Overall UPI product
 
 if type_statistic == "Overall UPI product":
     st.header("Overall UPI product statistics")
-            
+    
+    st.markdown("### Bank statistics")            
     fig,ax = plt.subplots(figsize = (16,9))
-    ax.bar(data_df.iloc[:,0], data_df.iloc[:,1], color = 'r')
+    ax.bar(data_upi_product.iloc[:,0], data_upi_product.iloc[:,1], color = 'r')
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval= 2))
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%b %y'))
     plt.xticks(rotation = 90)
@@ -94,14 +96,15 @@ if type_statistic == "Overall UPI product":
     plt.xlabel("Year", fontsize= 14)   
     st.pyplot(fig)
     
+    st.markdown("### Volume and Value of transactions")
     fig,ax = plt.subplots(figsize = (16,9))
-    s = [0.5*x for x in data_df.iloc[:,2]]
-    ax.scatter(data_df.iloc[:,0], data_df.iloc[:,2], s = s, color = 'r')
+    s = [0.5*x for x in data_upi_product.iloc[:,2]]
+    ax.scatter(data_upi_product.iloc[:,0], data_upi_product.iloc[:,2], s = s, color = 'r')
     ax.set_xlabel("year",fontsize=16)
     ax.set_ylabel("Volume (in Mn)",color="red",fontsize=16)
     
     ax2=ax.twinx()
-    ax2.plot(data_df.iloc[:,0], data_df.iloc[:,3], color = 'b')
+    ax2.plot(data_upi_product.iloc[:,0], data_upi_product.iloc[:,3], color = 'b')
     ax2.set_xlabel("year",fontsize=16)
     ax2.set_ylabel("Value (in Cr)",color="blue",fontsize=16)
     
@@ -109,7 +112,9 @@ if type_statistic == "Overall UPI product":
     
     st.pyplot(fig)
     
-    st.write(data_df)
+    
+    st.markdown("### UPI Product data")
+    st.write(data_upi_product)
     
 else:
     upi_ecosystem_type = st.sidebar.selectbox("Type of ecosystem", ["UPI Apps", "Remitter Banks", "Beneficiary Banks"])    
